@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <link rel="stylesheet" href="styles.css">
+        <title>Metadata Extractor</title>
+        <meta name="viewport" content="initial-scale=1.0">
+        <meta charset="utf-8">
+        <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height:60%;
+        width:60%
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+        </style>
+    </head>
+
+    <script>
+    var pdfmeta = require('pdfmeta')
+    pdfmeta.getInfo(filePath).then(function(data) {
+    console.log(data)
+    })
+    
+    </script>
+    
+    
+    <body>
+        <h1>Metadata Extractor</h1>
+        <div class="topnav">
+            <a href="home.html">Home</a>
+            <a href="meta.html">Metadata</a>
+            <a class="current" href="pdf.html">PDF</a>
+        </div>
+        
+        
+        
+    </body>

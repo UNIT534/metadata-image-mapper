@@ -1,0 +1,102 @@
+<html>
+    
+<script src="exif.js"></script>
+
+    <script>
+    
+    window.onload=getExif;
+
+    function getCoords(GPSCoords, GPSRef){
+        var deg = parseInt(GPSCoords[0]);
+        var min = parseInt(GPSCoords[1]);
+        var sec = parseInt(GPSCoords[2]);
+        var ref = 1;
+        if  (GPSRef == "S" || GPSRef == "W"){
+            ref = ref * (-1);
+        }
+        var coord = ref*(deg + (min/60) + (sec/3600));
+        return coord;
+    }
+    
+    getExif(document.getElementById("img"));
+    function getExif(image) {
+        EXIF.getData(img, function() {
+            var glat = EXIF.getTag(this, "GPSLatitude");
+            var latref = EXIF.getTag(this, "GPSLatitudeRef");
+            var lat = getCoords(glat, latref);
+            var glong = EXIF.getTag(this, "GPSLongitude");
+            var longref = EXIF.getTag(this, "GPSLongitudeRef");
+            var long = getCoords(glong, longref);
+            var ref = EXIF.getTag(this, "GPSReference");
+            var makeAndModel = document.getElementById("makeAndModel");
+            makeAndModel.innerHTML = `${lat} ${long}`;
+        });
+        
+        document.getElementById("file-input").onchange = function(e) {
+        var file = e.target.files[0]
+        if (file && file.name) {
+            EXIF.getData(file, function() {
+            var glat = EXIF.getTag(this, "GPSLatitude");
+            var latref = EXIF.getTag(this, "GPSLatitudeRef");
+            var lat = getCoords(glat, latref);
+            var glong = EXIF.getTag(this, "GPSLongitude");
+            var longref = EXIF.getTag(this, "GPSLongitudeRef");
+            var long = getCoords(glong, longref);
+            var ref = EXIF.getTag(this, "GPSReference");
+            var demo = document.getElementById("demo");
+            demo.innerHTML = `${lat} ${long}`;
+            });
+        }
+    }
+}
+
+    </script>    
+    <head>
+        <link rel="stylesheet" href="styles.css">
+        <title>Metadata Extractor</title>
+        <meta name="viewport" content="initial-scale=1.0">
+        <meta charset="utf-8">
+        <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height:60%;
+        width:60%
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+        </style>
+    </head>
+
+    <body>
+        <h1>Metadata Extractor</h1>
+        <div class="topnav">
+            <a href="home.html">Home</a>
+            <a class="current" href="metadata.html">Metadata</a>
+            <a href="pdf.html">PDF</a>
+        </div>    
+    
+    Upload a local file to read Exif data.
+    <br/>
+    <input id="file-input" type="file" />
+        
+        <img src="image1.jpg" id="img" />
+        <pre>Make and model: <span id="makeAndModel"></span></pre>
+        <pre>Regular Coordinates: <span id="output"></span></pre>
+        <p id="demo"></p>
+        <br/>
+        <img src="image2.jpg" id="img2" />
+        <pre id="allMetaDataSpan"></pre>
+        <br/>
+    </body>
+    
+    
+<script>    
+    document.getElementById("demo").innerHTML = getGPSLat();
+</script>
+</html>
