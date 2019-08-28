@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <link rel="stylesheet" href="styles.css">
+        <title>Metadata Extractor</title>
+        <meta name="viewport" content="initial-scale=1.0">
+        <meta charset="utf-8">
+        <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height:60%;
+        width:60%
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+        </style>
+    </head>
+
+    <body>
+        <h1>Metadata Extractor</h1>
+        <div class="topnav">
+            <a class="current" href="home.html">JPEG Visualizer</a>
+            <a href="meta.html">Metadata</a>
+            <a href="pdf.html">PDF</a>
+        </div>
+
+    <div style="padding-left:16px">
+            <h2>JPEG Visualizer</h2>
+            <p id="display"></p>
+    </div>
+
+    <div id="map" style="float: left"></div>
+
+    <input id="file-input" type="file" name="files[]"/>
+
+    <div style="float: right; height:58%;width:40%;overflow:auto;scrollbar-base-color:gold;font-family:sans-serif;padding:10px;">
+        <p id="images">Images n stuff go here</p>
+    </div>
+
+        <div id="floating-panel">
+            <input onclick="clearMarkers();" type=button value="Hide Markers">
+            <input onclick="showMarkers();" type=button value="Show All Markers">
+            <input onclick="deleteMarkers();" type=button value="Delete Markers">
+        </div>
+        <p></p>
+        <div id="meta">Metadata</div>
+
+    <script src="exif.js"></script>
+    <script>
+
+    var map;
+    var markers = [];
+    var images = new Array();
+
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 28.148855, lng: -81.849343},
+          zoom: 8
+        });
+
+        // This event listener will call addMarker() when the map is clicked.
+        map.addListener('click', function(event) {
+          addMarker(event.latLng);
+        });
+      }
+
+    function addPin(lat, lng, title, label) {
+        var marker = new google.maps.Marker({
+            position: {lat: lat, lng: lng},
+                map: map,
+                title: title,
+                label: label
+                });
+            }
+
+      var labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      var labelIndex = 0;
+        
+      // Adds a marker to the map and push to the array.
+      function addMarker(location) {
+        var marker = new google.maps.Marker({
+          position: location,
+          label: labels[labelIndex++ % labels.length],
+          map: map
+        });
+        markers.push(marker);
+      }
+
+      //function addLocation(location){
+          //addMarker(haightAshbury);
+     // }
+      // Sets the map on all markers in the array.
+      function setMapOnAll(map) {
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(map);
+        }
+      }
+
+      // Removes the markers from the map, but keeps them in the array.
+      function clearMarkers() {
+        setMapOnAll(null);
+      }
+
+      // Shows any markers currently in the array.
+      function showMarkers() {
+        setMapOnAll(map);
+      }
+
+      // Deletes all markers in the array by removing references to them.
+      function deleteMarkers() {
+        clearMarkers();
+        markers = [];
+      }
+
+    function addImage(image) {
+        var img = new Image();
+        img.src = image;
+        images.push(img);
+        displayImages();
+    }
+
+    function uploadImage(evt) {
+        var files = evt.target.files;
+
+        var reader = new FileReader();
+
+        f = files[files.length-1];
+
+        reader.onload = (function(theFile) {
+          return function(e) {
+            addImage(e.target.result);
+          };
+        })(f);
+
+        reader.readAsDataURL(f);
+    }
+
+    document.getElementById('file-input').addEventListener('change', uploadImage, false);
+
+    function getCoords(GPSCoords, GPSRef){
+        var deg = parseInt(GPSCoords[0]);
+        var min = parseInt(GPSCoords[1]);
+        var sec = parseInt(GPSCoords[2]);
+        var ref = 1;
+        if  (GPSRef == "S" || GPSRef == "W"){
+            ref = ref * (-1);
+        }
+        var coord = ref*(deg + (min/60) + (sec/3600));
+        return coord;
+      }
+
+      function getExif(i) {
+            var image = new Image();
+            image.src = images[i].src;
+            image.onload = function() {
+                EXIF.getData(image, function() {
+                    var glat = EXIF.getTag(this, "GPSLatitude");
+                    var latref = EXIF.getTag(this, "GPSLatitudeRef");
+                    var lat = getCoords(glat, latref);
+                    var glong = EXIF.getTag(this, "GPSLongitude");
+                    var longref = EXIF.getTag(this, "GPSLongitudeRef");
+                    var long = getCoords(glong, longref);
+                    var ref = EXIF.getTag(this, "GPSReference");
+                    images[i].lat = lat;
+                    images[i].long = long;
+                    
+                    if(i == ((images.length) - 1)) {
+                        var exampleMarker = ({lat:lat,lng:long});
+                        addMarker(exampleMarker);
+                    }
+                        
+                    
+                    images[i].make = EXIF.getTag(this, "Make");
+                    images[i].model = EXIF.getTag(this, "Model");
+                    images[i].time = EXIF.getTag(this, "DateTimeOriginal");
+                });
+              }
+            }
+
+    function displayImages() {
+        var output = "";
+        
+        for(var i = 0; i < images.length; i++) {
+            getExif(i);
+            output += '<img src="' + images[i].src + '" height="100" id="' + i + '"> <button type ="button" onclick="displayMeta(' + i + ')">Show Metadata</button> <br>';
+        }
+        document.getElementById("images").innerHTML = output;
+    }
+        
+    function displayMeta(i) {
+        var output = 'Make: ' + images[i].make + '<br>Model: ' + images[i].model + '<br>Time: ' + images[i].time + '<br>Latitude: ' + images[i].lat + '<br>Longitude: ' + images[i].long;
+        document.getElementById("meta").innerHTML = output;
+    }
+        
+    function compare(a, b) {
+        if (a.time < b.time)
+            return -1;
+        if (a.time > b.time)
+            return 1;
+    }
+        
+    function findDistance() {
+        var sortedImages = images;
+        sortedImages.sort(compare);
+    }
+
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap"
+    async defer></script>
+  </body>
+</html>
